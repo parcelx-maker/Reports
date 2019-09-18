@@ -3,7 +3,8 @@
 from module import Report
 import pymysql
 from settings import PARCELX_DB_HOST, PARCELX_DB_PWD, PARCELX_DB_PORT, PARCELX_DB_USER
-import datetime
+# import datetime
+from datetime import datetime, timezone, timedelta
 import xlwt
 
 
@@ -24,17 +25,21 @@ class ParcelTrackDaily(Report):
     }
 
     def generate(self):
-        today = datetime.date.today()
-        yesterday = today - datetime.timedelta(days=1)
-        sql = "SELECT account_name,`status`,COUNT(parcel_no) FROM parcel_track WHERE create_time > '{} 19:00:00.000000' AND create_time < '{} 19:00:00.000000' GROUP BY `status`  ORDER BY account_no".format(
-            str(yesterday), str(today))
+        print("开始生成统计表")
+        today = datetime.utcnow().replace(tzinfo=timezone.utc)
+        yesterday = today - timedelta(days=1)
+        today = today.strftime('%Y-%m-%d')
+        yesterday = yesterday.strftime('%Y-%m-%d')
+        # 北京时间19点，UTC11点
+        sql = "SELECT account_name,`status`,COUNT(parcel_no) FROM parcel_track WHERE create_time > '{} 11:00:00.000000' AND create_time < '{} 11:00:00.000000' GROUP BY `status`  ORDER BY account_no".format(
+            yesterday, today)
         db = pymysql.connect(host=PARCELX_DB_HOST, user=PARCELX_DB_USER, passwd=PARCELX_DB_PWD, port=PARCELX_DB_PORT,
                              db='parcelx', charset='utf8mb4')
         cursor = db.cursor()
         cursor.execute(sql)
         data = cursor.fetchall()
 
-        self.title = "每日包裹跟踪记录统计表 {} - {}".format(str(yesterday), str(today))
+        self.title = "每日包裹跟踪记录统计表 {} - {}".format(yesterday, today)
         self.msg = "见附件"
         report_dict = dict()
 

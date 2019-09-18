@@ -24,6 +24,7 @@ class Report:
         pass
 
     def send(self):
+        print("开始发生邮件 " + self.title)
         if not self.msg:
             raise ValueError("msg not exist, can not send empty mail!")
         if not self.title:
