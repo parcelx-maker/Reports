@@ -31,7 +31,7 @@ class ParcelTrackDaily(Report):
         today = today.strftime('%Y-%m-%d')
         yesterday = yesterday.strftime('%Y-%m-%d')
         # 北京时间19点，UTC11点
-        sql = "SELECT account_name,`status`,COUNT(parcel_no) FROM parcel_track WHERE create_time > '{} 11:00:00.000000' AND create_time < '{} 11:00:00.000000' GROUP BY `status`  ORDER BY account_no".format(
+        sql = "SELECT account_name,parcel_no,`status`,create_time FROM parcel_track WHERE create_time > '{} 11:00:00.000000' AND create_time < '{} 11:00:00.000000' ".format(
             yesterday, today)
         db = pymysql.connect(host=PARCELX_DB_HOST, user=PARCELX_DB_USER, passwd=PARCELX_DB_PWD, port=PARCELX_DB_PORT,
                              db='parcelx', charset='utf8mb4')
@@ -41,16 +41,30 @@ class ParcelTrackDaily(Report):
 
         self.title = "每日包裹跟踪记录统计表 {} - {}".format(yesterday, today)
         self.msg = "见附件"
-        report_dict = dict()
+
+        track_dict = dict()
 
         for item in data:
-            if item[0] not in report_dict:
-                report_dict[item[0]] = {item[1]: item[2]}
+            if item[0] in track_dict:
+                if item[1] in track_dict[item[0]]:
+                    if track_dict[item[0]][item[1]]['create_time'] < item[3]:
+                        track_dict[item[0]][item[1]] = {"status": item[2], "create_time": item[3]}
+                else:
+                    track_dict[item[0]][item[1]] = {"status": item[2], "create_time": item[3]}
             else:
-                report_dict[item[0]][item[1]] = item[2]
-
+                track_dict[item[0]] = {item[1]: {"status": item[2], "create_time": item[3]}}
         db.close()
 
+        report_dict = dict()
+        for account in track_dict:
+            if account not in report_dict:
+                report_dict[account] = dict()
+            for parcel_no in track_dict[account]:
+                parcel_status = track_dict[account][parcel_no]['status']
+                if parcel_status not in report_dict[account]:
+                    report_dict[account][parcel_status] = 1
+                else:
+                    report_dict[account][parcel_status] += 1
         book = xlwt.Workbook()
         sheet = book.add_sheet('sheet1')
         sheet.write(0, 0, "日期")
@@ -76,4 +90,4 @@ class ParcelTrackDaily(Report):
 if __name__ == '__main__':
     ptd = ParcelTrackDaily()
     ptd.generate()
-    ptd.send()
+    # ptd.send()
