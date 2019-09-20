@@ -30,9 +30,11 @@ class ParcelTrackDaily(Report):
         yesterday = today - timedelta(days=1)
         today = today.strftime('%Y-%m-%d')
         yesterday = yesterday.strftime('%Y-%m-%d')
+        hour = '11:00:00.000000'
         # 北京时间19点，UTC11点
-        sql = "SELECT account_name,parcel_no,`status`,create_time FROM parcel_track WHERE create_time > '{} 11:00:00.000000' AND create_time < '{} 11:00:00.000000' ".format(
-            yesterday, today)
+        sql = "SELECT account_info.`name`, parcel_track.parcel_no, parcel_track.`status`, parcel_track.create_time FROM parcel_track INNER JOIN parcel_info ON parcel_track.parcel_no = parcel_info.parcel_no INNER JOIN account_info ON account_info.id = parcel_info.account_no WHERE parcel_track.create_time > '{} {}' AND parcel_track.create_time < '{} {}' ".format(
+            yesterday, hour, today, hour)
+        print(sql)
         db = pymysql.connect(host=PARCELX_DB_HOST, user=PARCELX_DB_USER, passwd=PARCELX_DB_PWD, port=PARCELX_DB_PORT,
                              db='parcelx', charset='utf8mb4')
         cursor = db.cursor()
@@ -67,13 +69,14 @@ class ParcelTrackDaily(Report):
                     report_dict[account][parcel_status] += 1
         book = xlwt.Workbook()
         sheet = book.add_sheet('sheet1')
-        sheet.write(0, 0, "日期")
-        sheet.write(0, 1, "客户名称")
+        sheet.write(0, 0, "UTC {} {} 到 UTC {} {} 包裹追踪统计".format(yesterday, hour, today, hour))
+        sheet.write(1, 0, "日期")
+        sheet.write(1, 1, "客户名称")
         i = 2
         for status in self.PARCEL_STATUS:
-            sheet.write(0, i, self.PARCEL_STATUS[status])
+            sheet.write(1, i, self.PARCEL_STATUS[status])
             i += 1
-        c = 1
+        c = 2
         for client in report_dict:
             sheet.write(c, 0, str(today))
             sheet.write(c, 1, client)
