@@ -41,8 +41,8 @@ class ParcelTrackDaily(Report):
         cursor.execute(sql)
         data = cursor.fetchall()
 
-        self.title = "每日包裹跟踪记录统计表 {} - {}".format(yesterday, today)
-        self.msg = "见附件"
+        self.title = "Parcel tracking record daily statistics report {} to {}".format(yesterday, today)
+        self.msg = "包裹跟踪记录统计表每日报告 UTC {} {} 至 {} {}".format(yesterday, hour, today, hour)
 
         track_dict = dict()
 
@@ -88,9 +88,10 @@ class ParcelTrackDaily(Report):
                 i += 1
             c += 1
         book.save(self.title + '.xls')
+        self.attaches.append(self.title + '.xls')
 
 
 if __name__ == '__main__':
     ptd = ParcelTrackDaily()
     ptd.generate()
-    # ptd.send()
+    ptd.send()

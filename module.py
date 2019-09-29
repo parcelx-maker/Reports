@@ -4,6 +4,8 @@ import smtplib
 from email.header import Header
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email import encoders
+import mimetypes
 from settings import RECEIVERS, SENDER, EMAIL_HOST, MAIL_SMTP_PORT, EMAIL_USER, EMAIL_PWD
 
 
@@ -30,21 +32,23 @@ class Report:
         if not self.title:
             raise ValueError("title not exist, can not send mail without title!")
         message = MIMEMultipart()
-        message['From'] = self.sender
+        message['From'] = self.sender if self.sender else self.email_user
         message['To'] = self.receivers
         message['Subject'] = Header(self.title, 'utf-8')
         message.attach(MIMEText(self.msg, 'plain', 'utf-8'))
         if self.attaches:
             for attach in self.attaches:
-                att = MIMEText(open(attach, 'rb').read(), 'base64', 'utf-8')
-                att["Content-Type"] = 'application/octet-stream'
-                att["Content-Disposition"] = 'attachment; filename="' + attach + '"'
+                att = MIMEText(open(attach, 'rb').read(), 'base64', 'UTF-8')
+                att.__delitem__("Content-Type")
+                att["Content-Type"] = mimetypes.MimeTypes().guess_type(attach)[0]
+                att.add_header('Content-Disposition', 'attachment', filename=attach)
+                encoders.encode_base64(att)
                 message.attach(att)
         # try:
         so = smtplib.SMTP()
         so.connect(self.email_host, self.email_port)
         so.login(self.email_user, self.email_pwd)
-        so.sendmail(self.sender, self.receivers, message.as_string())
+        so.sendmail(self.email_user, self.receivers, message.as_string())
         print("邮件发送成功")
         # except smtplib.SMTPException as e:
         #     print("Error: 无法发送邮件" + e.strerror)
