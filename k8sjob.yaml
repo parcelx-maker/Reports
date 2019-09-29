@@ -1,0 +1,27 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: parcelx-report
+  namespace: parcelx-prod
+spec:
+  successfulJobsHistoryLimit: 1
+  schedule: "2 11 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: parcelx-report
+              image: registry.cn-hongkong.aliyuncs.com/parcelx/reports:1
+              env:
+                - name: EMAIL_HOST
+                  value: "ussmtp.mxhichina.com"
+                - name: MAIL_SMTP_PORT
+                  value: "443"
+                - name: PARCELX_DB_PWD
+                  value: ""
+                - name: EMAIL_PWD
+                  value: ""
+          imagePullSecrets:
+            - name: acr-ali-hk
+          restartPolicy: OnFailure

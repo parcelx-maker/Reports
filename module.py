@@ -26,7 +26,9 @@ class Report:
         pass
 
     def send(self):
-        print("开始发生邮件 " + self.title)
+        print("开始发送邮件 " + self.title)
+        print("收件人： %s" % self.receivers)
+        print(self.msg)
         if not self.msg:
             raise ValueError("msg not exist, can not send empty mail!")
         if not self.title:
@@ -44,11 +46,8 @@ class Report:
                 att.add_header('Content-Disposition', 'attachment', filename=attach)
                 encoders.encode_base64(att)
                 message.attach(att)
-        # try:
         so = smtplib.SMTP()
         so.connect(self.email_host, self.email_port)
         so.login(self.email_user, self.email_pwd)
         so.sendmail(self.email_user, self.receivers, message.as_string())
         print("邮件发送成功")
-        # except smtplib.SMTPException as e:
-        #     print("Error: 无法发送邮件" + e.strerror)
